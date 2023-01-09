@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
+/*------- Importing Routes which are defined in other files ------*/
 const usersRoute = require('./routes/users');
 const imageRoute = require('./routes/images');
 

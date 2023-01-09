@@ -2,7 +2,7 @@
   "development": {
     "username": "adarsh",
     "password": "Doge_264",
-    "database": "proboassignment",
+    "database": "proboassignmenttest",
     "host": "127.0.0.1",
     "dialect": "mysql"
   },

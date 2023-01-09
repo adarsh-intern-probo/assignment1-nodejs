@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post('/createuser',userController.signUp);
 router.post('/login',userController.login);
-router.get('/users',chechAuthMiddleware.checkAuth,userController.getUsers);
+router.get('/users/:page',chechAuthMiddleware.checkAuth,userController.getUsers);
 router.delete('/:id',chechAuthMiddleware.checkAuth,userController.delete);
 router.patch('/:id',chechAuthMiddleware.checkAuth,userController.update);
 router.get('/:id',chechAuthMiddleware.checkAuth,userController.show);

@@ -2,6 +2,24 @@ const models = require('../models');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const checkEmail = (email)=>{
+    let emailFormat =  /^[a-zA-Z0-9_.+]*[a-zA-Z][a-zA-Z0-9_.+]*@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+    if (email !== '' && email.match(emailFormat))
+        return true; 
+    return false;
+}
+
+const checkphoneNumber = (phoneNumber) => {
+    let re = /^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/;
+    return phoneNumber !== '' && re.test(phoneNumber);
+}
+const checkPassword = (inputtxt) => { 
+    let passw =  /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[^\w\s]).{8,}$/;
+    if(inputtxt.match(passw)) { 
+        return true;
+    } 
+    return false;
+}
 
 /*------- Function for SignUp of a user ------*/
 function signUp(req,res){
@@ -14,26 +32,55 @@ function signUp(req,res){
                     message : "Email already exists",
                 })
             } else {
-                bcryptjs.hash(req.body.password,salt,function(err,hash){
-                    const user = {
-                        firstname : req.body.firstname,
-                        lastname : req.body.lastname,
-                        password : hash,
-                        email : req.body.email,
-                        phone : req.body.phone
-                    }
-                
-                    models.User.create(user).then(result => {
-                        res.status(201).json({
-                            message : "User created Successfully",
-                        })
-                    }).catch(error => {
-                        console.log(error);
-                        res.status(500).json({
-                            message : "Something went wrong!",
+                const user = {
+                    firstname : req.body.firstname,
+                    lastname : req.body.lastname,
+                    password : req.body.password,
+                    email : req.body.email,
+                    phone : req.body.phone
+                }
+                if(!user.firstname || !user.lastname || !user.email || !user.phone ){
+                    res.status(409).json({
+                        "message" : "Please fill all the fields."
+                    });
+                } else if(!checkPassword(user.password)){
+                    res.status(409).json({
+                        "message" : "Password should be 7 to 15 characters which contain only characters, numeric digits, underscore and first character must be a letter."
+                    });
+                } else if(typeof(user.firstname) !== 'string' || typeof(user.lastname) !== 'string'){
+                    res.status(409).json({
+                        "message" : "Invalid data type"
+                    });
+                } else if(!checkEmail(user.email)){
+                    res.status(409).json({
+                        "message" : "Invalid email"
+                    });
+                } else if(!checkphoneNumber(user.phone)){
+                    res.status(409).json({
+                        "message" : "Invalid Phone"
+                    });
+                } else {
+                    bcryptjs.hash(req.body.password,salt,function(err,hash){
+                        const newUser = {
+                            firstname : req.body.firstname,
+                            lastname : req.body.lastname,
+                            password : hash,
+                            email : req.body.email,
+                            phone : req.body.phone
+                        }
+                        models.User.create(newUser).then(result => {
+                            res.status(201).json({
+                                message : "User created Successfully",
+                            })
+                        }).catch(error => {
+                            console.log(error);
+                            res.status(500).json({
+                                message : "Something went wrong!",
+                            });
                         });
                     });
-                });
+                }
+                
             }
         }).catch(error => {
             console.log(error);
@@ -81,15 +128,33 @@ function login(req,res) {
 
 /*------- Function for Getting all users ------*/
 function showAll(req,res){
-    models.User.findAll().then(result => {
-        res.status(200).json(result);
-    }).catch(error => {
-        console.log(error);
-        res.status(500).json({
-            message : "Something went wrong!",
+  let limit = 1; // number of records per page
+  let offset = 0;
+  models.User
+    .findAndCountAll()
+    .then(data => {
+        let page = req.params.page; // page number
+        let pages = Math.ceil(data.count / limit);
+        offset = limit * (page - 1);
+        models.User
+        .findAll({
+        attributes: ['firstname', 'lastname', 'email','phone'],
+            limit: limit,
+            offset: offset,
+        })
+        .then(users => {
+        res
+            .status(200)
+            .json({ result: users, count: data.count, pages: pages });
+        });
+    })
+    .catch(function (error) {
+        res.status(500).send({
+            message :'Internal Server Error',
+            error : error
         });
     });
-}
+};
 
 /*------- Function for Getting single user ------*/
 function show(req,res){

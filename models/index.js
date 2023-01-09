@@ -27,6 +27,8 @@ fs
   });
 
 Object.keys(db).forEach(modelName => {
+  console.log(modelName);
+  db[modelName].sync({force : true}).then(() => console.log("Sync complete"));
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
